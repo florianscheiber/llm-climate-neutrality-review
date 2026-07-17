@@ -11,8 +11,8 @@ import pandas as pd
 csv1_path = "/Users/florianscheiber/PycharmProjects/llm-climate-neutrality-review/outputs_llm_runs/abstracts_output_20260529_openai_gpt4o-mini.csv"
 csv2_path = "/Users/florianscheiber/PycharmProjects/llm-climate-neutrality-review/outputs_llm_runs/output_20260610_validation_gpt-4o-mini.csv"
 
-output_json = "/Users/florianscheiber/PycharmProjects/llm-climate-neutrality-review/analyses_compare_two_llm_results/compare_gpt4o-mini_20260529_and_validation_20260610/grading_comparison_summary.json"
-output_differences_csv = "/Users/florianscheiber/PycharmProjects/llm-climate-neutrality-review/analyses_compare_two_llm_results/compare_gpt4o-mini_20260529_and_validation_20260610/grading_comparison_differences.csv"
+output_json = "/Users/florianscheiber/PycharmProjects/llm-climate-neutrality-review/compare_two_llm_results/compare_gpt4o-mini_20260529_and_validation_20260610/grading_comparison_summary.json"
+output_differences_csv = "/Users/florianscheiber/PycharmProjects/llm-climate-neutrality-review/compare_two_llm_results/compare_gpt4o-mini_20260529_and_validation_20260610/grading_comparison_differences.csv"
 
 doi_col = "doi"
 

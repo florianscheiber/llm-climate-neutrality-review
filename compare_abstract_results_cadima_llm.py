@@ -8,8 +8,8 @@ from collections import defaultdict
 # ============================================================================
 
 # HIER ANPASSEN
-LLM_RUN_OUTPUT = "output_api_claude-4.6-sonnet_20260622"
-CADIMA_STAGE = "after_fulltext" # after_abstract or after_fulltext
+LLM_RUN_OUTPUT = "llm_cadima_api_claude-4.6-sonnet"
+CADIMA_STAGE = "cadima_after_fulltext" # cadima_after_abstract or cadima_after_fulltext
 
 
 LLM_RESULTS_CSV = f"outputs_llm_runs_abstract_screening/{LLM_RUN_OUTPUT}.csv"
