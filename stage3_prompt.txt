@@ -30,11 +30,11 @@ If NO climate-neutral or net-zero scenario is present:
 Return:
 
 {
-"eligible": false,
-"reason": "no climate-neutral scenario found",
-"mitigation": [],
-"costs": [],
-"emissions": []
+  "eligible": false,
+  "reason": "no climate-neutral scenario found",
+  "mitigation": [],
+  "costs": [],
+  "emissions": []
 }
 
 If at least one climate-neutral or net-zero scenario exists:
@@ -68,34 +68,6 @@ Extract explicit zero values.
 
 If a value equals 0, record it.
 
-If a pathway contains many years, extract:
-
-1. the first year shown
-2. the year where climate neutrality is achieved
-
-Do NOT extract intermediate years.
-
-Example:
-
-2020, 2030, 2040, 2050
-
-If climate neutrality is achieved in 2050:
-
-Extract:
-
-2020
-2050
-
-only.
-
-Create one row per extracted year.
-
-If a pathway contains both the first year and the climate-neutrality year:
-
-Create two separate rows.
-
-Do NOT store multiple years in one row.
-
 If multiple scenarios are available:
 
 Extract all climate-neutral / net-zero scenarios.
@@ -105,6 +77,10 @@ Do NOT extract scenarios that do not achieve climate neutrality.
 If a figure contains multiple technologies, sectors, categories or regions:
 
 Extract each separately.
+
+Extract every quantitatively reported mitigation, cost or emission variable that is explicitly associated with a numerical value.
+
+Do NOT extract legend entries, labels or categories that are not associated with an explicit quantitative value.
 
 Example:
 
@@ -127,6 +103,66 @@ Example:
 100-150
 
 → extract 125.
+
+------------------------------------------------------------------------
+PATHWAY EXTRACTION RULE
+------------------------------------------------------------------------
+
+The objective is to extract pathway transitions.
+
+For every extracted pathway, scenario, technology, sector, category, region or measure:
+
+always extract TWO datapoints whenever available:
+
+1. the first year shown in the pathway
+2. the year where climate neutrality is achieved
+
+These two datapoints define the pathway transition.
+
+A pathway extraction is incomplete if only the climate-neutrality year is extracted while the first year is available.
+
+Example:
+
+2020 = 50 GW
+2030 = 120 GW
+2040 = 220 GW
+2050 = 300 GW (climate neutrality)
+
+Extract ONLY:
+
+2020 = 50 GW
+2050 = 300 GW
+
+Do NOT extract intermediate years.
+
+Create one separate row for each extracted year.
+
+If only a single year is reported in the source, extract that year.
+
+If the first year shown is not the current year, use the first year shown.
+
+Example:
+
+2030 = 100 GW
+2040 = 200 GW
+2050 = 300 GW
+
+Extract:
+
+2030 = 100 GW
+2050 = 300 GW
+
+------------------------------------------------------------------------
+CLIMATE-NEUTRALITY YEAR IDENTIFICATION
+------------------------------------------------------------------------
+
+Use the explicitly reported climate-neutrality year whenever possible.
+
+If climate neutrality occurs between displayed years, use the first displayed year at which net emissions are zero or negative.
+
+If the paper explicitly states a climate-neutrality year in the text, use that year.
+
+If the climate-neutrality year cannot be identified with reasonable confidence, do not extract the pathway.
 
 ------------------------------------------------------------------------
 DATA SOURCES
@@ -153,6 +189,12 @@ Examples:
 - techno-economic parameters
 
 These values may be reported in COSTS.
+
+Only use information contained in the provided document.
+
+Do not assume that additional supplementary material exists.
+
+Do not infer information from external sources.
 
 ------------------------------------------------------------------------
 MITIGATION EXTRACTION
@@ -345,88 +387,87 @@ OUTPUT FORMAT
 Return ONLY valid JSON.
 
 {
-"eligible": true,
-"reason": "",
+  "eligible": true,
+  "reason": "",
 
-"mitigation": [
-{
-"Mitigation_Measure": "",
-"Mitigation_Measure_Detail": "",
+  "mitigation": [
+    {
+      "Mitigation_Measure": "",
+      "Mitigation_Measure_Detail": "",
 
-"Scenario_Name": "",
+      "Scenario_Name": "",
 
-"Capacity": "",
-"Capacity_Unit": "",
+      "Capacity": "",
+      "Capacity_Unit": "",
 
-"Amount": "",
-"Amount_Unit": "",
+      "Amount": "",
+      "Amount_Unit": "",
 
-"Investment_Cost": "",
-"Investment_Cost_Unit": "",
+      "Investment_Cost": "",
+      "Investment_Cost_Unit": "",
 
-"Variable_Cost": "",
-"Variable_Cost_Unit": "",
+      "Variable_Cost": "",
+      "Variable_Cost_Unit": "",
 
-"Year": "",
+      "Year": "",
 
-"Sector": "",
-"Sector_Other": "",
+      "Sector": "",
+      "Sector_Other": "",
 
-"Area": "",
+      "Area": "",
 
-"Source_Type": "",
-"Source_Number": "",
+      "Source_Type": "",
+      "Source_Number": "",
 
-"Comment": ""
+      "Comment": ""
+    }
+  ],
+
+  "costs": [
+    {
+      "Cost_Type": "",
+      "Cost_Type_Detail": "",
+
+      "Scenario_Name": "",
+
+      "Value": "",
+      "Value_Unit": "",
+
+      "Year": "",
+
+      "Sector": "",
+      "Sector_Other": "",
+
+      "Area": "",
+
+      "Source_Type": "",
+      "Source_Number": "",
+
+      "Comment": ""
+    }
+  ],
+
+  "emissions": [
+    {
+      "Emission_Type": "",
+      "Emission_Type_Detail": "",
+
+      "Scenario_Name": "",
+
+      "Value": "",
+      "Value_Unit": "",
+
+      "Year": "",
+
+      "Sector": "",
+      "Sector_Other": "",
+
+      "Area": "",
+
+      "Source_Type": "",
+      "Source_Number": "",
+
+      "Comment": ""
+    }
+  ]
 }
-],
-
-"costs": [
-{
-"Cost_Type": "",
-"Cost_Type_Detail": "",
-
-"Scenario_Name": "",
-
-"Value": "",
-"Value_Unit": "",
-
-"Year": "",
-
-"Sector": "",
-"Sector_Other": "",
-
-"Area": "",
-
-"Source_Type": "",
-"Source_Number": "",
-
-"Comment": ""
-}
-],
-
-"emissions": [
-{
-"Emission_Type": "",
-"Emission_Type_Detail": "",
-
-"Scenario_Name": "",
-
-"Value": "",
-"Value_Unit": "",
-
-"Year": "",
-
-"Sector": "",
-"Sector_Other": "",
-
-"Area": "",
-
-"Source_Type": "",
-"Source_Number": "",
-
-"Comment": ""
-}
-]
-}
-
