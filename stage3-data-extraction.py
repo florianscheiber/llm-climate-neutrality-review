@@ -27,6 +27,7 @@
 #
 
 from pathlib import Path
+from PIL import Image
 import argparse
 import base64
 import csv
@@ -52,7 +53,7 @@ MODE = "single_call"
 
 PAGE_RENDER_DPI = 300
 
-MAX_TOKENS = 20000
+MAX_TOKENS = 30000
 
 RETRIES = 3
 
@@ -125,7 +126,40 @@ def render_pages(
 
         pix.save(output_file)
 
+        img = Image.open(output_file)
+
+        max_dimension = max(img.size)
+
+        if max_dimension > 2000:
+
+            scale = 2000 / max_dimension
+
+            new_size = (
+                int(img.size[0] * scale),
+                int(img.size[1] * scale),
+            )
+
+            img = img.resize(
+                new_size,
+                Image.LANCZOS,
+            )
+
+            img.save(output_file)
+            """
+            debug(
+                f"Downscaled {output_file.name}: "
+                f"{img.size[0]}x{img.size[1]}"
+            )
+            """
+        """
+        debug(
+            f"{output_file.name}: "
+            f"{img.size[0]}x{img.size[1]}"
+        )
+        """
+
         image_paths.append(output_file)
+
 
     doc.close()
 
@@ -222,7 +256,7 @@ def call_openrouter_vision(
 
             with urllib.request.urlopen(
                 request,
-                timeout=300
+                timeout=180
             ) as response:
 
                 payload = json.loads(
@@ -230,6 +264,9 @@ def call_openrouter_vision(
                         "utf-8"
                     )
                 )
+
+                if "choices" not in payload:
+                    print(json.dumps(payload, indent=2))
 
                 return (
                     payload["choices"][0]
@@ -391,6 +428,55 @@ def write_csv(
 # PAPER PROCESSING
 # ============================================================================
 
+def append_log(
+    log_file,
+    paper_id,
+    eligible,
+    status,
+    message,
+    mitigation_rows="",
+    cost_rows="",
+    emission_rows="",
+    runtime_seconds="",
+):
+
+    file_exists = log_file.exists()
+
+    with open(
+        log_file,
+        "a",
+        encoding="utf-8",
+        newline=""
+    ) as f:
+
+        writer = csv.writer(
+            f,
+            delimiter=";"
+        )
+
+        if not file_exists:
+            writer.writerow([
+                "paper_id",
+                "eligible",
+                "status",
+                "message",
+                "mitigation_rows",
+                "cost_rows",
+                "emission_rows",
+                "runtime_seconds",
+            ])
+
+        writer.writerow([
+            paper_id,
+            eligible,
+            status,
+            message,
+            mitigation_rows,
+            cost_rows,
+            emission_rows,
+            runtime_seconds,
+        ])
+
 def process_pdf(
     pdf_path: Path,
     output_root: Path,
@@ -402,6 +488,8 @@ def process_pdf(
     article_id = extract_article_id(
         pdf_path
     )
+
+    start_time = time.time()
 
     debug(
         f"Processing {article_id}"
@@ -451,6 +539,21 @@ def process_pdf(
             True
         )
 
+        mitigation_rows = result.get(
+            "mitigation",
+            []
+        )
+
+        cost_rows = result.get(
+            "costs",
+            []
+        )
+
+        emission_rows = result.get(
+            "emissions",
+            []
+        )
+
         mitigation_csv = (
             article_output_dir
             / f"{article_id}-mitigation.csv"
@@ -490,38 +593,65 @@ def process_pdf(
                 f"{article_id}: not eligible"
             )
 
-            return
+            runtime_seconds = round(
+                time.time() - start_time,
+                1
+            )
+
+            return {
+                "paper_id": article_id,
+                "eligible": False,
+                "status": "saved",
+                "message": "no climate-neutral scenario found",
+                "mitigation_rows": 0,
+                "cost_rows": 0,
+                "emission_rows": 0,
+                "runtime_seconds": runtime_seconds,
+            }
 
         write_csv(
             mitigation_csv,
             MITIGATION_COLUMNS,
-            result.get(
-                "mitigation",
-                []
-            ),
+            mitigation_rows,
         )
 
         write_csv(
             costs_csv,
             COST_COLUMNS,
-            result.get(
-                "costs",
-                []
-            ),
+            cost_rows,
         )
 
         write_csv(
             emissions_csv,
             EMISSION_COLUMNS,
-            result.get(
-                "emissions",
-                []
-            ),
+            emission_rows,
         )
 
         print(
             f"{article_id}: completed"
         )
+
+        runtime_seconds = round(
+            time.time() - start_time,
+            1
+        )
+
+        return {
+            "paper_id": article_id,
+            "eligible": True,
+            "status": "saved",
+            "message": "ok",
+            "mitigation_rows": len(
+                mitigation_rows
+            ),
+            "cost_rows": len(
+                cost_rows
+            ),
+            "emission_rows": len(
+                emission_rows
+            ),
+            "runtime_seconds": runtime_seconds,
+        }
 
     finally:
 
@@ -582,6 +712,11 @@ def main():
         exist_ok=True
     )
 
+    log_file = (
+            output_folder
+            / "run_log.csv"
+    )
+
     prompt_text = load_prompt(
         Path(args.prompt_file)
     )
@@ -598,7 +733,7 @@ def main():
 
         try:
 
-            process_pdf(
+            result = process_pdf(
                 pdf_path=pdf_path,
                 output_root=output_folder,
                 prompt_text=prompt_text,
@@ -606,7 +741,32 @@ def main():
                 api_key=api_key,
             )
 
+            append_log(
+                log_file=log_file,
+                paper_id=result["paper_id"],
+                eligible=result["eligible"],
+                status=result["status"],
+                message=result["message"],
+                mitigation_rows=result["mitigation_rows"],
+                cost_rows=result["cost_rows"],
+                emission_rows=result["emission_rows"],
+                runtime_seconds=result["runtime_seconds"],
+            )
+
         except Exception as exc:
+
+            paper_id = extract_article_id(
+                pdf_path
+            )
+
+            append_log(
+                log_file=log_file,
+                paper_id=paper_id,
+                eligible="",
+                status="error",
+                message=str(exc),
+                runtime_seconds="",
+            )
 
             print(
                 f"ERROR {pdf_path.name}: {exc}"
