@@ -25,7 +25,7 @@ pdf-screening.py
 
 Aufruf:
 
-LLM_ROUTER_API_KEY=<key> python3 fulltext-screening.py \
+LLM_ROUTER_API_KEY=<key> python3 stage2-fulltext-screening.py \
 papers_directory \
 output.csv \
 --provider router \
