@@ -530,6 +530,13 @@ def process_pdf(
             )
         )
 
+        with open(
+                article_output_dir / f"{article_id}_raw_response.txt",
+                "w",
+                encoding="utf-8"
+        ) as f:
+            f.write(raw_response)
+
         result = parse_llm_output(
             raw_response
         )
