@@ -152,6 +152,21 @@ Extract:
 2030 = 100 GW
 2050 = 300 GW
 
+When pathway figures and summary figures are both available,
+prioritize pathway figures.
+
+Do not replace pathway information with aggregated shares,
+percentage distributions or accumulated summary statistics.
+
+When pathway figures and summary figures are both available,
+extract pathway information in addition to any relevant summary information.
+
+Do not omit pathway information simply because summary information is available.
+
+Relevant quantitative information from summary figures,
+aggregated shares, percentage distributions and contribution
+breakdowns may also be extracted.
+
 ------------------------------------------------------------------------
 CLIMATE-NEUTRALITY YEAR IDENTIFICATION
 ------------------------------------------------------------------------
@@ -378,7 +393,26 @@ must be returned as:
 Value = 350
 Value_Unit = EUR/MWh
 
-If the unit cannot be identified reliably, leave the unit field empty.
+If the unit cannot be identified reliably:
+
+Value_Unit = Not reported
+
+For all cost-related values, record the currency base year whenever reported.
+
+Currency_Base_Year = The price year (reference year) for reported costs before inflation adjustment.
+
+Examples:
+
+2020 EUR/MWh
+→ Currency_Base_Year = 2020
+
+2015 USD/tCO2
+→ Currency_Base_Year = 2015
+
+If no price year is reported:
+
+Currency_Base_Year = Not reported
+
 
 ------------------------------------------------------------------------
 OUTPUT FORMAT
@@ -405,9 +439,11 @@ Return ONLY valid JSON.
 
       "Investment_Cost": "",
       "Investment_Cost_Unit": "",
+      "Investment_Cost_Currency_Base_Year": "",
 
       "Variable_Cost": "",
       "Variable_Cost_Unit": "",
+      "Variable_Cost_Currency_Base_Year": "",
 
       "Year": "",
 
@@ -432,6 +468,7 @@ Return ONLY valid JSON.
 
       "Value": "",
       "Value_Unit": "",
+      "Currency_Base_Year": "",
 
       "Year": "",
 

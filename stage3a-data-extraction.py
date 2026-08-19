@@ -17,14 +17,20 @@
 #
 # PROMPT:
 #
-# stage3_prompt.txt
+# stage3a_prompt.txt
 #
 # USAGE:
 #
-# LLM_ROUTER_API_KEY=<KEY> python3 stage3-extraction.py \
+# export LLM_ROUTER_API_KEY=<KEY>
+# python3 stage3a-data-extraction.py \
 # papers \
 # output
 #
+
+# export LLM_ROUTER_API_KEY=<KEY>
+# python3 stage3a-data-extraction.py \
+# inputs/fulltext_pdf/allPDF/included-after-stage-2 \
+# output-stage3
 
 from pathlib import Path
 from PIL import Image
@@ -41,6 +47,11 @@ import urllib.request
 import urllib.error
 
 import fitz
+
+import truststore
+
+truststore.inject_into_ssl()
+
 
 
 # ============================================================================
@@ -59,6 +70,14 @@ RETRIES = 3
 
 RETRY_SECONDS = 5
 
+PAGE_LIMIT = 1000
+PRIMARY_DPI = 300
+PRIMARY_MAX_DIM = 2000
+
+FALLBACK_DPI = 250
+FALLBACK_MAX_DIM = 1800
+
+MAX_IMAGE_PAYLOAD_MB = 30
 
 # ============================================================================
 # HELPERS
@@ -95,6 +114,22 @@ def load_prompt(prompt_path: Path) -> str:
 
         return f.read()
 
+def group_pdfs_by_article_id(pdf_folder):
+
+    groups = {}
+
+    for pdf_path in pdf_folder.glob("*.pdf"):
+
+        article_id = extract_article_id(
+            pdf_path
+        )
+
+        groups.setdefault(
+            article_id,
+            []
+        ).append(pdf_path)
+
+    return groups
 
 # ============================================================================
 # PDF RENDERING
@@ -103,12 +138,14 @@ def load_prompt(prompt_path: Path) -> str:
 def render_pages(
     pdf_path: Path,
     render_dir: Path,
-    dpi: int = PAGE_RENDER_DPI
+    dpi,
+    max_dim,
 ):
 
     doc = fitz.open(pdf_path)
 
     image_paths = []
+    pdf_prefix = pdf_path.stem
 
     for page_idx in range(len(doc)):
 
@@ -121,7 +158,7 @@ def render_pages(
 
         output_file = (
             render_dir
-            / f"page_{page_idx + 1:03d}.png"
+            / f"{pdf_prefix}_page_{page_idx + 1:03d}.png"
         )
 
         pix.save(output_file)
@@ -130,9 +167,9 @@ def render_pages(
 
         max_dimension = max(img.size)
 
-        if max_dimension > 2000:
+        if max_dimension > max_dim:
 
-            scale = 2000 / max_dimension
+            scale = max_dim / max_dimension
 
             new_size = (
                 int(img.size[0] * scale),
@@ -165,6 +202,22 @@ def render_pages(
 
     return image_paths
 
+
+def get_total_image_size_mb(image_paths):
+
+    total_bytes = 0
+
+    for image_path in image_paths:
+
+        total_bytes += (
+            image_path.stat().st_size
+        )
+
+    return (
+        total_bytes
+        / 1024
+        / 1024
+    )
 
 # ============================================================================
 # OPENROUTER
@@ -438,6 +491,10 @@ def append_log(
     cost_rows="",
     emission_rows="",
     runtime_seconds="",
+    document_mode="",
+    pdf_count="",
+    page_count="",
+    render_mode="",
 ):
 
     file_exists = log_file.exists()
@@ -464,6 +521,10 @@ def append_log(
                 "cost_rows",
                 "emission_rows",
                 "runtime_seconds",
+                "document_mode",
+                "pdf_count",
+                "page_count",
+                "render_mode",
             ])
 
         writer.writerow([
@@ -475,20 +536,20 @@ def append_log(
             cost_rows,
             emission_rows,
             runtime_seconds,
+            document_mode,
+            pdf_count,
+            page_count,
+            render_mode
         ])
 
-def process_pdf(
-    pdf_path: Path,
+def process_paper(
+    article_id,
+    pdf_paths,
     output_root: Path,
     prompt_text: str,
     model: str,
     api_key: str,
 ):
-
-    article_id = extract_article_id(
-        pdf_path
-    )
-
     start_time = time.time()
 
     debug(
@@ -496,8 +557,34 @@ def process_pdf(
     )
 
     article_output_dir = (
-        output_root / article_id
+            output_root / article_id
     )
+
+    mitigation_csv = (
+            article_output_dir
+            / f"{article_id}-mitigation.csv"
+    )
+
+    costs_csv = (
+            article_output_dir
+            / f"{article_id}-costs.csv"
+    )
+
+    emissions_csv = (
+            article_output_dir
+            / f"{article_id}-emissions.csv"
+    )
+
+    if (
+            mitigation_csv.exists()
+            and costs_csv.exists()
+            and emissions_csv.exists()
+    ):
+        print(
+            f"{article_id}: already processed"
+        )
+
+        return None
 
     article_output_dir.mkdir(
         parents=True,
@@ -512,10 +599,151 @@ def process_pdf(
 
     try:
 
-        image_paths = render_pages(
-            pdf_path,
-            temp_dir
+        main_pdfs = [
+            p for p in pdf_paths
+            if "-main.pdf" in p.name
+        ]
+
+        if len(main_pdfs) != 1:
+            raise RuntimeError(
+                "no unique main pdf found"
+            )
+
+        main_pdf = main_pdfs[0]
+
+        supplement_pdfs = [
+            p for p in pdf_paths
+            if p != main_pdf
+        ]
+
+        total_pages = 0
+
+        for pdf in pdf_paths:
+            doc = fitz.open(pdf)
+
+            total_pages += len(doc)
+
+            doc.close()
+
+        if total_pages <= PAGE_LIMIT:
+
+            selected_pdfs = (
+                    [main_pdf]
+                    + supplement_pdfs
+            )
+
+            document_mode = (
+                "main_plus_supplements"
+            )
+
+        else:
+
+            selected_pdfs = [
+                main_pdf
+            ]
+
+            document_mode = (
+                "main_only_page_limit"
+            )
+
+        render_mode = "dpi300"
+
+        image_paths = []
+
+        for pdf in selected_pdfs:
+            image_paths.extend(
+                render_pages(
+                    pdf,
+                    temp_dir,
+                    PRIMARY_DPI,
+                    PRIMARY_MAX_DIM,
+                )
+            )
+
+        payload_mb = get_total_image_size_mb(
+            image_paths
         )
+
+        debug(
+            f"Payload size: {payload_mb:.1f} MB"
+        )
+
+        if payload_mb > MAX_IMAGE_PAYLOAD_MB:
+
+            shutil.rmtree(
+                temp_dir,
+                ignore_errors=True
+            )
+
+            temp_dir = Path(
+                tempfile.mkdtemp(
+                    prefix=f"{article_id}_fallback_"
+                )
+            )
+
+            image_paths = []
+
+            for pdf in selected_pdfs:
+                image_paths.extend(
+                    render_pages(
+                        pdf,
+                        temp_dir,
+                        FALLBACK_DPI,
+                        FALLBACK_MAX_DIM,
+                    )
+                )
+
+            render_mode = "dpi250"
+
+            payload_mb = get_total_image_size_mb(
+                image_paths
+            )
+
+            debug(
+                f"Fallback payload size: "
+                f"{payload_mb:.1f} MB"
+            )
+
+        if payload_mb > MAX_IMAGE_PAYLOAD_MB:
+
+            selected_pdfs = [main_pdf]
+
+            shutil.rmtree(
+                temp_dir,
+                ignore_errors=True
+            )
+
+            temp_dir = Path(
+                tempfile.mkdtemp(
+                    prefix=f"{article_id}_mainonly_"
+                )
+            )
+
+            image_paths = []
+
+            for pdf in selected_pdfs:
+                image_paths.extend(
+                    render_pages(
+                        pdf,
+                        temp_dir,
+                        FALLBACK_DPI,
+                        FALLBACK_MAX_DIM,
+                    )
+                )
+
+            render_mode = "onlymain"
+
+            payload_mb = get_total_image_size_mb(
+                image_paths
+            )
+
+        if payload_mb > MAX_IMAGE_PAYLOAD_MB:
+            render_mode = "skip"
+
+            raise RuntimeError(
+                f"payload still exceeds limit "
+                f"({payload_mb:.1f} MB)"
+            )
 
         debug(
             f"Rendered {len(image_paths)} pages"
@@ -614,6 +842,10 @@ def process_pdf(
                 "cost_rows": 0,
                 "emission_rows": 0,
                 "runtime_seconds": runtime_seconds,
+                "document_mode": document_mode,
+                "pdf_count": len(selected_pdfs),
+                "page_count": total_pages,
+                "render_mode": render_mode,
             }
 
         write_csv(
@@ -658,6 +890,10 @@ def process_pdf(
                 emission_rows
             ),
             "runtime_seconds": runtime_seconds,
+            "document_mode": document_mode,
+            "pdf_count": len(selected_pdfs),
+            "page_count": total_pages,
+            "render_mode": render_mode,
         }
 
     finally:
@@ -686,7 +922,7 @@ def main():
 
     parser.add_argument(
         "--prompt-file",
-        default="stage3_prompt.txt"
+        default="stage3a_prompt.txt"
     )
 
     parser.add_argument(
@@ -728,25 +964,33 @@ def main():
         Path(args.prompt_file)
     )
 
-    pdf_files = sorted(
-        pdf_folder.glob("*.pdf")
+    paper_groups = (
+        group_pdfs_by_article_id(
+            pdf_folder
+        )
     )
 
     print(
-        f"Found {len(pdf_files)} PDFs"
+        f"Found {len(paper_groups)} papers"
     )
 
-    for pdf_path in pdf_files:
+    for article_id, pdf_paths in sorted(
+            paper_groups.items()
+    ):
 
         try:
 
-            result = process_pdf(
-                pdf_path=pdf_path,
+            result = process_paper(
+                article_id=article_id,
+                pdf_paths=pdf_paths,
                 output_root=output_folder,
                 prompt_text=prompt_text,
                 model=args.model,
                 api_key=api_key,
             )
+
+            if result is None:
+                continue
 
             append_log(
                 log_file=log_file,
@@ -758,13 +1002,15 @@ def main():
                 cost_rows=result["cost_rows"],
                 emission_rows=result["emission_rows"],
                 runtime_seconds=result["runtime_seconds"],
+                document_mode=result["document_mode"],
+                pdf_count=result["pdf_count"],
+                page_count=result["page_count"],
+                render_mode=result["render_mode"],
             )
 
         except Exception as exc:
 
-            paper_id = extract_article_id(
-                pdf_path
-            )
+            paper_id = article_id
 
             append_log(
                 log_file=log_file,
@@ -773,10 +1019,11 @@ def main():
                 status="error",
                 message=str(exc),
                 runtime_seconds="",
+                render_mode="",
             )
 
             print(
-                f"ERROR {pdf_path.name}: {exc}"
+                f"ERROR {article_id}: {exc}"
             )
 
 
