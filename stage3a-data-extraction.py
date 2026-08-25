@@ -14,23 +14,26 @@
 # REQUIREMENTS:
 #
 # pip install pymupdf
+# pip install pillow
+# pip install truststore
 #
 # PROMPT:
 #
 # stage3a_prompt.txt
 #
-# USAGE:
+# USAGE IN TERMINAL:
 #
 # export LLM_ROUTER_API_KEY=<KEY>
 # python3 stage3a-data-extraction.py \
-# papers \
-# output
+# papers-directory \
+# output-directory
 #
 
+# e.g.
 # export LLM_ROUTER_API_KEY=<KEY>
 # python3 stage3a-data-extraction.py \
-# inputs/fulltext_pdf/allPDF/included-after-stage-2 \
-# output-stage3
+# inputs/included-after-stage-3-100 \
+# output-stage3a
 
 from pathlib import Path
 from PIL import Image

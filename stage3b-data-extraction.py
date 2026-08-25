@@ -47,13 +47,13 @@
 #
 # PROMPT:
 #
-# stage03b_prompt.txt
+# stage3b_prompt.txt
 #
-# USAGE:
+# USAGE IN TERMINAL:
 #
 # export LLM_ROUTER_API_KEY=<KEY>
 #
-# python3 stage03b-text-table-extraction.py \
+# python3 stage3b-data-extraction.py \
 # papers-directory \
 # output-directory
 #
@@ -62,7 +62,7 @@
 # export LLM_ROUTER_API_KEY=<KEY>
 #
 # python3 stage3b-data-extraction.py \
-# inputs/fulltext_pdf/allPDF/included-after-stage-3-100 \
+# inputs/included-after-stage-3-100 \
 # outputs/output-stage3b
 #
 # NOTES:
