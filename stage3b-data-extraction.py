@@ -54,16 +54,16 @@
 # export LLM_ROUTER_API_KEY=<KEY>
 #
 # python3 stage03b-text-table-extraction.py \
-# papers \
-# output
+# papers-directory \
+# output-directory
 #
 # EXAMPLE:
 #
 # export LLM_ROUTER_API_KEY=<KEY>
 #
 # python3 stage3b-data-extraction.py \
-# inputs/fulltext_pdf/allPDF/included-after-stage-3 \
-# output-stage03b
+# inputs/fulltext_pdf/allPDF/included-after-stage-3-100 \
+# outputs/output-stage3b
 #
 # NOTES:
 #
@@ -307,6 +307,57 @@ def parse_llm_output(
             )
 
     return json.loads(raw_text)
+
+
+def normalize_output_rows(result):
+
+    for section_name in [
+        "mitigation",
+        "costs",
+        "emissions",
+    ]:
+
+        rows = result.get(
+            section_name,
+            []
+        )
+
+        if not isinstance(rows, list):
+            continue
+
+        normalized_rows = []
+
+        for row in rows:
+
+            if not isinstance(row, dict):
+                normalized_rows.append(row)
+                continue
+
+            normalized_row = dict(row)
+
+            if (
+                not normalized_row.get("Area")
+                and normalized_row.get("Region")
+            ):
+                normalized_row["Area"] = (
+                    normalized_row["Region"]
+                )
+
+            if (
+                not normalized_row.get("Source_Number")
+                and normalized_row.get("Source_Detail")
+            ):
+                normalized_row["Source_Number"] = (
+                    normalized_row["Source_Detail"]
+                )
+
+            normalized_rows.append(
+                normalized_row
+            )
+
+        result[section_name] = normalized_rows
+
+    return result
 
 
 # ============================================================================
@@ -588,6 +639,10 @@ def process_paper(
         raw_response
     )
 
+    result = normalize_output_rows(
+        result
+    )
+
     candidate_file = (
             article_output_dir
             / f"{article_id}-candidates.txt"
@@ -604,7 +659,10 @@ def process_paper(
                 []
         ):
             f.write(
-                candidate + "\n"
+                f"{candidate.get('identifier', '')}\n"
+                f"Reason: {candidate.get('reason', '')}\n"
+                f"Expected information type: "
+                f"{candidate.get('expected_information_type', '')}\n\n"
             )
 
     eligible = result.get(
@@ -750,7 +808,7 @@ def main():
 
     parser.add_argument(
         "--prompt-file",
-        default="stage3a_prompt.txt"
+        default="stage3b_prompt.txt"
     )
 
     parser.add_argument(
