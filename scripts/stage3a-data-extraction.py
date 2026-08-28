@@ -1,4 +1,4 @@
-# stage3-extraction.py
+# scripts/stage3a-data-extraction.py  (stage 3a -- superseded by 3c)
 #
 # INPUT:
 #     138-some-paper.pdf
@@ -19,19 +19,19 @@
 #
 # PROMPT:
 #
-# stage3a_prompt.txt
+# prompts/stage3a_prompt.txt
 #
 # USAGE IN TERMINAL:
 #
 # export LLM_ROUTER_API_KEY=<KEY>
-# python3 stage3a-data-extraction.py \
+# python3 scripts/stage3a-data-extraction.py \
 # papers-directory \
 # output-directory
 #
 
 # e.g.
 # export LLM_ROUTER_API_KEY=<KEY>
-# python3 stage3a-data-extraction.py \
+# python3 scripts/stage3a-data-extraction.py \
 # inputs/included-after-stage-3-100 \
 # output-stage3a
 
@@ -925,7 +925,10 @@ def main():
 
     parser.add_argument(
         "--prompt-file",
-        default="stage3a_prompt.txt"
+        default=str(
+            Path(__file__).resolve().parent.parent
+            / "prompts" / "stage3a_prompt.txt"
+        )
     )
 
     parser.add_argument(

@@ -2,3 +2,9 @@
 /outputs
 /explorative_notebooks
 key.rtf
+__pycache__/
+*.pyc
+.venv/
+/intermediate
+/outputs
+/.vscode

@@ -1,4 +1,4 @@
-# stage3b-data-extraction.py
+# scripts/stage3b-data-extraction.py  (stage 3b -- superseded by 3c)
 #
 # INPUT:
 #     138-main.pdf
@@ -47,13 +47,13 @@
 #
 # PROMPT:
 #
-# stage3b_prompt.txt
+# prompts/stage3b_prompt.txt
 #
-# USAGE IN TERMINAL:
+# USAGE IN TERMINAL:  (run from the repo root)
 #
 # export LLM_ROUTER_API_KEY=<KEY>
 #
-# python3 stage3b-data-extraction.py \
+# python3 scripts/stage3b-data-extraction.py \
 # papers-directory \
 # output-directory
 #
@@ -61,7 +61,7 @@
 #
 # export LLM_ROUTER_API_KEY=<KEY>
 #
-# python3 stage3b-data-extraction.py \
+# python3 scripts/stage3b-data-extraction.py \
 # inputs/included-after-stage-3-100 \
 # outputs/output-stage3b
 #
@@ -808,7 +808,10 @@ def main():
 
     parser.add_argument(
         "--prompt-file",
-        default="stage3b_prompt.txt"
+        default=str(
+            Path(__file__).resolve().parent.parent
+            / "prompts" / "stage3b_prompt.txt"
+        )
     )
 
     parser.add_argument(

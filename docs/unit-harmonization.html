@@ -1,0 +1,626 @@
+<title>Unit Harmonization</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Newsreader:ital@1&display=swap">
+
+<style>
+  :root {
+    --ground:        #f5f5f2;
+    --panel:         #efeeea;
+    --panel-line:    #dddcd4;
+    --ink:           #232427;
+    --ink-soft:      #4c4d4e;
+    --muted:         #7c7b73;
+    --accent:        #8f3a2e;   /* oxblood — correction ink / "indexed" */
+    --accent-soft:   #b9503f;
+    --ok:            #3c6f4f;
+    --flag:          #9a6a1c;
+    --excl:          #85837a;
+    --rule:          #cfcec6;
+    --code-bg:       #ecebe5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #16171a;
+      --panel:       #1d1e21;
+      --panel-line:  #2c2d31;
+      --ink:         #e9e7e1;
+      --ink-soft:    #c3c1b9;
+      --muted:       #8f8e85;
+      --accent:      #d98b5f;
+      --accent-soft: #e6a986;
+      --ok:          #6fae86;
+      --flag:        #d0a558;
+      --excl:        #7f7e75;
+      --rule:        #2f3034;
+      --code-bg:     #232428;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #16171a;
+    --panel:       #1d1e21;
+    --panel-line:  #2c2d31;
+    --ink:         #e9e7e1;
+    --ink-soft:    #c3c1b9;
+    --muted:       #8f8e85;
+    --accent:      #d98b5f;
+    --accent-soft: #e6a986;
+    --ok:          #6fae86;
+    --flag:        #d0a558;
+    --excl:        #7f7e75;
+    --rule:        #2f3034;
+    --code-bg:     #232428;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.62;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem;
+    padding: .7rem clamp(1rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .74rem; letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .topbar b { color: var(--accent); font-weight: 600; }
+  .topbar span { color: var(--muted); }
+
+  main { max-width: 44rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2rem) 6rem; }
+  section { margin-top: 4.5rem; }
+
+  /* ---- hero ---- */
+  .hero { margin-top: 3.2rem; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .76rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1.1rem;
+  }
+  h1 {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-weight: 600;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+  }
+  .lede {
+    font-size: 1.28rem; line-height: 1.5; color: var(--ink-soft);
+    max-width: 34rem; margin: 0 0 2.6rem;
+  }
+  .lede em { font-style: italic; color: var(--ink); }
+
+  .worked {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-left: 3px solid var(--accent);
+    padding: 1.4rem 1.5rem;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .92rem; line-height: 1.9;
+    overflow-x: auto;
+  }
+  .worked .row { white-space: nowrap; }
+  .worked .op { color: var(--muted); }
+  .worked .in { color: var(--ink); }
+  .worked .out { color: var(--accent); font-weight: 600; }
+  .worked .note { color: var(--muted); font-size: .82rem; white-space: normal; display:block; margin-top:.6rem; line-height:1.5;}
+
+  /* ---- headings ---- */
+  h2 {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-weight: 600; font-size: 1.32rem; letter-spacing: -.005em;
+    margin: 0 0 1.1rem; padding-bottom: .5rem;
+    border-bottom: 1px solid var(--rule);
+    text-wrap: balance;
+  }
+  h2 .num {
+    color: var(--accent); margin-right: .7rem; font-weight: 500;
+  }
+  h3 {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-weight: 500; font-size: .95rem; letter-spacing: .02em;
+    text-transform: uppercase; color: var(--ink-soft);
+    margin: 2.2rem 0 .8rem;
+  }
+  p { margin: 0 0 1.05rem; max-width: 40rem; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  strong { font-weight: 600; }
+  ul { padding-left: 1.2rem; margin: 0 0 1.05rem; max-width: 40rem; }
+  li { margin: .3rem 0; }
+
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .86em;
+  }
+  p code, li code, td code {
+    background: var(--code-bg);
+    padding: .06em .38em;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  /* ---- ledger tables ---- */
+  .scroll { overflow-x: auto; margin: 1.4rem 0 1.6rem; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+  }
+  caption {
+    text-align: left; color: var(--muted); font-size: .8rem;
+    margin-bottom: .6rem; font-family: "IBM Plex Mono", monospace;
+  }
+  th {
+    text-align: left; font-weight: 600; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: .04em; font-size: .72rem;
+    padding: .5rem .8rem .5rem 0;
+    border-bottom: 2px solid var(--accent);
+    white-space: nowrap;
+  }
+  td {
+    padding: .5rem .8rem .5rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  td.n, th.n { text-align: right; padding-right: 1.4rem; }
+  tr:last-child td { border-bottom: none; }
+  .t-note { color: var(--muted); font-size: .78rem; white-space: normal; }
+
+  /* ---- pipeline diagram ---- */
+  .flow {
+    display: flex; flex-wrap: wrap; gap: .5rem; align-items: stretch;
+    margin: 1.4rem 0 1.8rem;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .8rem;
+  }
+  .flow .step {
+    flex: 1 1 8rem; background: var(--panel); border: 1px solid var(--panel-line);
+    padding: .7rem .8rem;
+  }
+  .flow .step b { color: var(--accent); display:block; font-weight:600; margin-bottom:.2rem; }
+  .flow .arr { align-self: center; color: var(--muted); }
+
+  /* ---- status pills ---- */
+  .pill {
+    display: inline-block; font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem; padding: .1em .5em; border-radius: 2px;
+    border: 1px solid currentColor; white-space: nowrap;
+  }
+  .pill.ok   { color: var(--ok); }
+  .pill.flag { color: var(--flag); }
+  .pill.excl { color: var(--excl); }
+
+  .callout {
+    background: var(--panel); border: 1px solid var(--panel-line);
+    border-left: 3px solid var(--flag);
+    padding: 1rem 1.2rem; margin: 1.4rem 0;
+    font-size: .96rem;
+  }
+  .callout h3 { margin-top: 0; color: var(--flag); }
+
+  hr.soft { border: none; border-top: 1px solid var(--rule); margin: 2.4rem 0; }
+
+  footer {
+    max-width: 44rem; margin: 5rem auto 0; padding: 2rem clamp(1rem,4vw,2rem) 3rem;
+    border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", monospace; font-size: .76rem; color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 16.5px; }
+    .lede { font-size: 1.14rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="topbar">
+  <b>unit&#8202;·&#8202;harmonization</b>
+  <span>stage3c-harmonize.py</span>
+</div>
+
+<main>
+  <div class="hero">
+    <p class="kicker">Data extraction pipeline &nbsp;/&nbsp; step 3c &rarr; harmonized</p>
+    <h1>Unit Harmonization Method</h1>
+    <p class="lede">
+      The extracted climate-scenario tables report quantities in <em>453 distinct
+      unit strings</em> &mdash; <code>GW</code>, <code>PJ&nbsp;biomass&nbsp;year-1</code>,
+      <code>1975$/GJ</code>, <code>Tg&nbsp;CO2eq&nbsp;a-1</code>. This step collapses
+      them onto five target units, converting currencies through historical
+      exchange rates and indexing every monetary value to real 2025 US dollars.
+    </p>
+
+    <div class="worked" aria-label="Worked example">
+      <div class="row"><span class="in">52.0&nbsp;&nbsp;1975&nbsp;$/GJ</span></div>
+      <div class="row"><span class="op">&nbsp;&rarr; &times;&nbsp;3.6&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="in">187.2&nbsp;&nbsp;USD/MWh&nbsp;&nbsp;</span><span class="op">(GJ &rarr; MWh)</span></div>
+      <div class="row"><span class="op">&nbsp;&rarr; &times;&nbsp;1.00&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="in">187.2&nbsp;&nbsp;USD/MWh&nbsp;&nbsp;</span><span class="op">(USD, no FX)</span></div>
+      <div class="row"><span class="op">&nbsp;&rarr; &times;&nbsp;1.20&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="out">224.64&nbsp;&nbsp;USD2025/MWh</span><span class="op">&nbsp;(US deflator 1975&rarr;2025)</span></div>
+      <span class="note">Every harmonized number carries the exchange rate, deflator factor
+      and physical factor that produced it, plus a status flag.</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>Scope</h2>
+    <p>
+      Harmonization applies to every value / unit pair in the three merged tables:
+      <code>Capacity</code>, <code>Amount</code>, <code>Investment_Cost</code> and
+      <code>Variable_Cost</code> in mitigation; <code>Value</code> in costs and in
+      emissions. It also harmonizes the <code>Sector</code> field (below).
+      Standardized values and their provenance are added as new columns; an
+      original value is never overwritten, though a <em>blank</em> one may be
+      completed from sibling rows (see Context fill, logged in
+      <code>Context_Filled</code>).
+    </p>
+
+    <div class="scroll">
+      <table>
+        <caption>Target units &mdash; a value is standardized only if its dimension is one of these</caption>
+        <thead>
+          <tr><th>Dimension</th><th>Target</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Power</td><td>MW</td><td class="t-note">from <code>Capacity</code></td></tr>
+          <tr><td>Energy</td><td>MWh</td><td class="t-note">flows keep their time denominator, e.g. <code>MWh/yr</code></td></tr>
+          <tr><td>CO&#8322; mass</td><td>MtCO2 <span class="t-note">/ MtCO2eq</span></td><td class="t-note">the <code>eq</code> distinction is preserved, not GWP-rebased</td></tr>
+          <tr><td>Area</td><td>km2</td><td class="t-note">land-use footprints</td></tr>
+          <tr><td>Money</td><td>real 2025 USD</td><td class="t-note">rate denominators kept raw: <code>USD2025/MWh</code>, <code>USD2025/tCO2</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Everything outside these five dimensions &mdash; percentages and shares, index
+      numbers, physical intensities (<code>W/m&#178;</code>, <code>kWh/capita</code>),
+      counts (<code>wind&nbsp;turbines</code>), non-CO&#8322; gases (<code>ktCH4</code>,
+      <code>Mt&nbsp;NOx</code>), water volumes &mdash; passes through unchanged with a
+      status flag. It is not forced into a target unit.
+    </p>
+  </section>
+
+  <section>
+    <h2>Context fill</h2>
+    <p>
+      Before any unit is touched, blanks that the surrounding rows resolve
+      unambiguously are filled in. The extractor frequently records a field on
+      only some rows of a paper &mdash; most often <code>Area</code>: a
+      single-country study that labels only a handful of its rows and leaves
+      the rest empty (the Chile paper <code>p436</code> carried
+      <code>Chile</code> on 19 rows and blank on 126).
+    </p>
+    <p>
+      For each paper, a field is filled from its other rows <strong>only when
+      they hold exactly one distinct non-blank value</strong> for it &mdash;
+      i.e. the paper is internally unambiguous. A paper spanning several
+      regions (<code>USA</code>, <code>China</code>, <code>Global</code>&hellip;)
+      leaves its blank <code>Area</code> rows untouched. Nothing is inferred
+      across papers, and a non-blank value is never overwritten.
+    </p>
+    <div class="scroll">
+      <table>
+        <caption>Fields completed from sibling rows</caption>
+        <thead><tr><th>Field</th><th>Table</th><th>Rule</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Area</td><td class="t-note">all three</td><td class="t-note">paper&rsquo;s single distinct non-blank area &mdash; feeds the net-zero grouping and every geographic split downstream</td></tr>
+          <tr><td class="mono">Title, Publication_Year, DOI</td><td class="t-note">all three</td><td class="t-note">paper-level constants; <code>Publication_Year</code> also feeds the monetary base-year fallback</td></tr>
+          <tr><td class="mono">Currency_Base_Year</td><td class="t-note">costs</td><td class="t-note">paper&rsquo;s single distinct price year for that cost column</td></tr>
+          <tr><td class="mono">Investment_Cost_Currency_Base_Year, Variable_Cost_Currency_Base_Year</td><td class="t-note">mitigation</td><td class="t-note">same, per cost column</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="t-note" style="max-width:40rem">
+      Every fill is listed per row in the new <code>Context_Filled</code>
+      column (<code>";"</code>-joined field names, blank when nothing was
+      filled), so each one can be audited or reverted. In the current corpus
+      this fills <b>574</b> blank <code>Area</code> values (126 in emissions
+      &mdash; all the Chile paper &mdash; and 448 in mitigation) and
+      <b>561</b> mitigation cost base-years; the costs table needs none.
+    </p>
+    <h3>Canonical keys</h3>
+    <p>
+      The same scenario or area is written many ways across a paper
+      (<code>"NZ_2050"</code> / <code>"NZ 2050"</code> / <code>"NZ-2050"</code>;
+      <code>"USA"</code> / <code>"United States"</code> / <code>"U.S."</code>).
+      Two columns, <code>Scenario_canon</code> and <code>Area_canon</code>, hold
+      a normalised form &mdash; unified case and separators, net-zero spelling
+      variants merged, well-known country aliases folded. <em>Distinguishing
+      tokens such as target years are kept</em>, so <code>NZ&nbsp;2040</code>
+      and <code>NZ&nbsp;2050</code> stay separate. Every downstream group-by and
+      every <code>netzero-flags.csv</code> join runs on these keys, not the raw
+      strings, so a scenario is no longer split into sub-threshold fragments.
+    </p>
+  </section>
+
+  <section>
+    <h2>Pipeline</h2>
+    <p>Each value field runs through four stages.</p>
+    <div class="flow">
+      <div class="step"><b>01</b> normalize the unit string</div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>02</b> classify the dimension</div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>03</b> physical conversion</div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>04</b> monetary conversion</div>
+    </div>
+
+    <h3>01 &nbsp; Normalize the unit string</h3>
+    <p>
+      The raw strings are irregular: <strong>177</strong> distinct forms in the
+      mitigation <code>Amount</code> column alone, <strong>160</strong> in costs,
+      <strong>116</strong> in emissions. A regex pass fixes the recurring patterns
+      observed across the corpus:
+    </p>
+    <ul>
+      <li>Unicode &rarr; ASCII: <code>CO&#8322;</code>, <code>&#8901;</code>, <code>&#8315;&#185;</code>, superscripts, en-dashes.</li>
+      <li>Spelling variants collapsed: <code>CO2-eq</code> / <code>CO2e</code> / <code>CO2&nbsp;(equiv.)</code> &rarr; <code>CO2eq</code>; <code>tonnes</code> / <code>metric&nbsp;tons</code> &rarr; <code>t</code>; <code>kilotons</code> &rarr; <code>kt</code>; <code>standard&nbsp;coal&nbsp;equivalent</code> &rarr; <code>tce</code>.</li>
+      <li>Inverse-power time notation: <code>yr-1</code>, <code>a&#8722;1</code>, <code>p.a.</code> &rarr; <code>/yr</code>.</li>
+      <li>Magnitude words and scientific notation pulled out as a numeric multiplier: <code>billion</code>, <code>trillion</code>, <code>Mrd</code>, <code>bn</code>, <code>10^6</code>, <code>&times;10^4</code>, a bare leading <code>1000&nbsp;JPY/kW</code>, and currency-glued prefixes <code>M&euro;</code>, <code>T$</code>, <code>bAUD</code>.</li>
+      <li>An embedded price year is extracted for the monetary step: <code>1975$/GJ</code>, <code>&euro;2016/MWh</code>, <code>bAUD2021</code>.</li>
+      <li>Descriptor words dropped before classification: <code>PJ&nbsp;<s>biomass</s>&nbsp;year-1</code>, <code>GWh&nbsp;<s>electricity</s></code>.</li>
+    </ul>
+    <p>The string is then split into a numerator and one or more denominators.</p>
+
+    <h3>02 &nbsp; Classify the dimension</h3>
+    <p>
+      The numerator is matched against curated token tables &mdash; power, energy,
+      CO&#8322;/carbon, area, currency. A bare mass token (<code>Mt</code>,
+      <code>10^6&nbsp;t</code>) is read as CO&#8322; when the row is an emissions row,
+      or a mitigation row whose measure is inherently a CO&#8322; quantity (carbon
+      dioxide removal, CCS, CCU); otherwise it stays unclassified, because it could
+      be ammonia, hydrogen or materials. Anything matching a
+      percentage / index / count / intensity pattern is marked non-convertible.
+    </p>
+  </section>
+
+  <section>
+    <h2>Physical conversion</h2>
+    <p>Deterministic factors. Denominators are converted on their own axis
+      (<code>$/kW</code> &rarr; <code>$/MW</code> &times;&nbsp;1000).</p>
+
+    <div class="scroll">
+      <table>
+        <caption>Representative factors &mdash; the code table is exhaustive</caption>
+        <thead><tr><th>Dimension</th><th>&rarr; target</th><th>Examples</th></tr></thead>
+        <tbody>
+          <tr><td>power</td><td class="mono">MW</td><td class="t-note"><code>kW</code> 1e&#8722;3 &nbsp; <code>GW</code> 1e3 &nbsp; <code>TW</code> 1e6 &nbsp; <code>GWel</code>=<code>GW</code></td></tr>
+          <tr><td>energy</td><td class="mono">MWh</td><td class="t-note"><code>GWh</code> 1e3 &nbsp; <code>TWh</code> 1e6 &nbsp; <code>PJ</code> 277&#8202;778 &nbsp; <code>EJ</code> 2.78e8 &nbsp; <code>GWa</code> 8.76e6 &nbsp; <code>MMBtu</code> 0.293</td></tr>
+          <tr><td>CO&#8322; mass</td><td class="mono">MtCO2</td><td class="t-note"><code>tCO2</code> 1e&#8722;6 &nbsp; <code>GtCO2</code> 1e3 &nbsp; <code>Tg</code>=<code>Mt</code> &nbsp; <code>Pg</code>=<code>Gt</code></td></tr>
+          <tr><td>area</td><td class="mono">km2</td><td class="t-note"><code>ha</code> 1e&#8722;2 &nbsp; <code>Mha</code> 1e4 &nbsp; <code>Mkm2</code> 1e6</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <h3>Generic assumptions</h3>
+      <p style="margin-bottom:.4rem">
+        Non-regional, applied uniformly, and flagged in <code>_status</code>:
+      </p>
+      <ul style="margin-bottom:0">
+        <li><code>1&nbsp;toe = 11.63&nbsp;MWh</code> &nbsp;&middot;&nbsp; <code>1&nbsp;tce = 8.141&nbsp;MWh</code> &nbsp;&middot;&nbsp; <code>1&nbsp;bcm&nbsp;gas = 10.6&nbsp;TWh</code></li>
+        <li>elemental carbon &rarr; CO&#8322; &times;&nbsp;44/12, for <code>tC</code>, <code>MtC</code>, <code>TgC</code>, &ldquo;carbon&rdquo;</li>
+        <li><code>CO2eq</code> is kept as a separate target unit from <code>CO2</code>; no GWP horizon is imposed</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Sector harmonization</h2>
+    <p>
+      The extraction schema's <code>Sector</code> is noisy: Land-Use and Forestry
+      are split, and <code>Sector&nbsp;=&nbsp;&ldquo;Other&rdquo;</code> holds ~540
+      rows that are really transport, buildings or livestock. The free-text
+      <code>Sector_Other</code> carries the real signal &mdash; 315 distinct
+      strings across the three tables. Three columns are added:
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Column</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">Sector_std</td><td class="t-note">Land-Use + Forestry &rarr; <code>LULUCF</code>; then, when <code>Sector</code> is <code>Other</code>/blank, reclassified from a <code>Sector_Other</code> keyword rule (transport / buildings / services &rarr; Energy, cement / steel / chemicals &rarr; Industry, livestock / crops &rarr; Agriculture, AFOLU / forest &rarr; LULUCF, economy-wide &rarr; All sectors)</td></tr>
+          <tr><td class="mono">Subsector_std</td><td class="t-note">canonical subsector from <code>Sector_Other</code> &mdash; ~30 buckets: <code>Power: generation</code> / <code>storage</code> / <code>T&amp;D</code>, <code>Heat</code>, <code>Transport</code>, <code>Buildings</code>, <code>Hydrogen &amp; synthetic fuels</code>, <code>Bioenergy</code>, <code>Fossil fuel supply</code>, <code>Industry: cement / iron &amp; steel / chemicals / pulp &amp; paper / food / other</code>, <code>Agriculture: livestock / crops</code>, <code>CDR: DACCS / BECCS / land</code>, <code>Waste</code>, <code>Services</code>, <code>Whole economy</code> &hellip;</td></tr>
+          <tr><td class="mono">Sector_std_source</td><td class="t-note"><code>landuse_merge</code> / <code>from_sector_other</code> / <code>original</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="t-note" style="max-width:40rem">
+      Coverage: <b>98%</b> of the 3,616 rows with a <code>Sector_Other</code> get a
+      <code>Subsector_std</code>. The <code>Other</code> main-sector bucket shrinks
+      from ~540 rows to ~35 (genuinely mixed &mdash; &ldquo;energy, industrial and
+      urban&rdquo;, &ldquo;non-energy sources&rdquo;). DACCS is filed under Energy
+      with the subsector flagging it.
+    </p>
+  </section>
+
+  <section>
+    <h2>Monetary conversion</h2>
+    <p>
+      Convert first, then deflate with the US GDP deflator &mdash; the convention
+      used by IEA, NREL ATB and IPCC WG3, which this dataset will be compared
+      against.
+    </p>
+    <div class="worked">
+      <div class="row"><span class="in">nominal LCU&nbsp;(year Y)</span></div>
+      <div class="row"><span class="op">&nbsp;&rarr; &divide; FX(Y)&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="in">nominal USD&nbsp;(year Y)</span><span class="op">&nbsp;&nbsp;World Bank annual-average rate, LCU per USD</span></div>
+      <div class="row"><span class="op">&nbsp;&rarr; &times; D&#8323;&#8320;&#8322;&#8325;/D&#7527;&nbsp;</span><span class="out">real USD 2025</span><span class="op">&nbsp;&nbsp;US GDP deflator ratio</span></div>
+    </div>
+
+    <h3>Base year Y</h3>
+    <p>Resolved in order, and the source recorded in <code>_base_year_src</code>:</p>
+    <ul>
+      <li><code>explicit</code> &mdash; the <code>Currency_Base_Year</code> the model extracted (present for ~40% of cost rows)</li>
+      <li><code>unit_string</code> &mdash; a year embedded in the unit (<code>2010&nbsp;US$/kW</code>)</li>
+      <li><code>publication_year</code> &mdash; fallback to the paper&rsquo;s year; flagged, since it assumes the cost is quoted in then-current money</li>
+    </ul>
+
+    <h3>Currency</h3>
+    <p>
+      Detected from the unit tokens and mapped to a World Bank economy for the
+      rate lookup. <code>$</code> with no other marker is read as USD and flagged
+      <span class="pill flag">assumed_currency</span>. <code>EUR</code> uses the
+      euro-area aggregate regardless of the paper&rsquo;s country.
+    </p>
+    <div class="scroll">
+      <table>
+        <caption>Currencies present in the corpus &rarr; rate economy</caption>
+        <thead><tr><th>Token</th><th>Economy</th><th class="n">Occurrences</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">USD $ US$</td><td class="mono">USA</td><td class="n">1&#8202;386</td></tr>
+          <tr><td class="mono">EUR &euro;</td><td class="mono">EMU</td><td class="n">369</td></tr>
+          <tr><td class="mono">CNY yuan RMB &yen;</td><td class="mono">CHN</td><td class="n">498</td></tr>
+          <tr><td class="mono">AUD</td><td class="mono">AUS</td><td class="n">108</td></tr>
+          <tr><td class="mono">CHF</td><td class="mono">CHE</td><td class="n">68</td></tr>
+          <tr><td class="mono">JPY</td><td class="mono">JPN</td><td class="n">44</td></tr>
+          <tr><td class="mono">THB</td><td class="mono">THA</td><td class="n">22</td></tr>
+          <tr><td class="mono">CAD, GBP, INR</td><td class="mono">CAN / GBR / IND</td><td class="n">&lt;20</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Reference data</h2>
+    <p>
+      Fetched from the <strong>World Bank Indicators API</strong> on first run
+      (<code>--refresh</code> to re-fetch) and cached under
+      <code>inputs/reference/</code> so subsequent runs are deterministic and
+      offline. No API key.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Quantity</th><th>Indicator</th><th>Coverage</th></tr></thead>
+        <tbody>
+          <tr><td>Annual-average exchange rate<br><span class="t-note">LCU per USD</span></td><td class="mono">PA.NUS.FCRF</td><td class="t-note">16 economies, 1960&ndash;2025 <span class="t-note">(EUR from 1999)</span></td></tr>
+          <tr><td>US GDP deflator<br><span class="t-note">index, ratio only</span></td><td class="mono">NY.GDP.DEFL.ZS &middot; USA</td><td class="t-note">1960&ndash;2025, complete &mdash; no gaps, no extrapolation needed</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      A base year past the last data point (a 2026 paper with no stated price
+      year) uses the 2025 deflator, i.e. no adjustment; the
+      <code>base_year=from_publication</code> flag already signals the
+      uncertainty. If a future run finds the deflator series incomplete, the
+      target year is extrapolated from the last year-over-year change and
+      flagged <code>deflator_2025_extrapolated</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Output schema</h2>
+    <p>Per row: <code>Context_Filled</code> (see Context fill),
+      <code>Sector_std</code>, <code>Subsector_std</code>,
+      <code>Sector_std_source</code> (see Sector harmonization). Then per value
+      field <code>F</code>:</p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">F_std</td><td>standardized value, 10 significant figures</td></tr>
+          <tr><td class="mono">F_std_Unit</td><td>e.g. <code>MW</code>, <code>MtCO2/yr</code>, <code>USD2025/MWh</code></td></tr>
+          <tr><td class="mono">F_factor_physical</td><td>the physical factor applied (blank for money)</td></tr>
+          <tr><td class="mono">F_currency_in</td><td>detected input currency</td></tr>
+          <tr><td class="mono">F_base_year_in</td><td>resolved price year</td></tr>
+          <tr><td class="mono">F_base_year_src</td><td><code>explicit</code> / <code>unit_string</code> / <code>publication_year</code></td></tr>
+          <tr><td class="mono">F_fx_rate</td><td>LCU-per-USD rate used</td></tr>
+          <tr><td class="mono">F_us_deflator_factor</td><td>D&#8323;&#8320;&#8322;&#8325; / D&#7527;</td></tr>
+          <tr><td class="mono">F_status</td><td>see below</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>netzero-flags.csv</h3>
+    <p>
+      A companion table, one row per
+      <code>(paper, scenario&#8202;<sub>canon</sub>, area&#8202;<sub>canon</sub>, basis)</code>
+      that carries net-zero evidence. Scenario and area are the
+      <em>canonical</em> keys (see Context fill / the shared key module), so
+      <code>"NZ_2050"</code>, <code>"NZ 2050"</code> and <code>"NZ-2050"</code>
+      are one scenario. <code>f</code> is <code>--netzero-fraction</code>
+      (default <code>0.05</code>) and is written into every row.
+      <code>series_source</code> records which tier decided the flag, most
+      reliable first:
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>series_source</th><th>Evidence</th><th>Flagged net zero when</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">all_sectors_total</td><td class="t-note">&ge;&nbsp;2 years of an economy-wide <code>All sectors</code> total</td><td class="t-note"><code>last &le; f &times; first</code></td></tr>
+          <tr><td class="mono">sector_sum</td><td class="t-note">&ge;&nbsp;2 years of a &ge;&nbsp;2-sector sum</td><td class="t-note"><code>last &le; f &times; first</code></td></tr>
+          <tr><td class="mono">single_endpoint_total</td><td class="t-note">one late <code>All sectors</code> reading (year &ge; 2035), no first year</td><td class="t-note"><code>emissions &le; 0</code></td></tr>
+          <tr><td class="mono">single_endpoint_sector_sum</td><td class="t-note">one late &ge;&nbsp;2-sector sum</td><td class="t-note"><code>sum &le; 0</code></td></tr>
+          <tr><td class="mono">relative_reduction</td><td class="t-note">a late <code>&minus;95&thinsp;% vs base</code> / <code>% of YYYY</code> / <code>Index (YYYY=100)</code> point</td><td class="t-note"><code>remaining fraction &le; f</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="t-note" style="max-width:40rem">
+      Net-negative end states always qualify. <code>ratio_last_to_first</code>
+      (or, for a relative row, the remaining fraction) is written so the
+      threshold can be moved without re-running. A percentage / index row only
+      counts when its <code>Emission_Type</code> is a CO&#8322; series and its
+      wording is a level or a reduction, not a rate or a share.
+    </p>
+
+    <h3>Status vocabulary</h3>
+    <ul>
+      <li><span class="pill ok">ok</span> converted with no assumptions</li>
+      <li><span class="pill flag">base_year=from_publication</span> &nbsp;<span class="pill flag">assumed_currency</span> &nbsp;<span class="pill flag">assumed_co2</span> &nbsp;<span class="pill flag">carbon_to_co2</span> &nbsp;<span class="pill flag">generic_calorific</span> &nbsp;<span class="pill flag">fx_year=YYYY</span> &mdash; converted, one documented assumption</li>
+      <li><span class="pill flag">denom_kept:&hellip;</span> numerator converted, an unrecognized denominator left verbatim</li>
+      <li><span class="pill excl">not_convertible</span> percentage, index, ratio &mdash; no target unit exists</li>
+      <li><span class="pill excl">unit_unparsed</span> &nbsp;<span class="pill excl">unit_not_reported</span> &nbsp;<span class="pill excl">no_value</span> &mdash; nothing to convert</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Coverage</h2>
+    <p>Across the 100-paper corpus, of the rows that carry a usable unit:</p>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Table / field</th><th class="n">Rows</th><th class="n">Standardized</th><th class="n">Non-conv.</th><th class="n">Unparsed</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">costs &middot; Value</td><td class="n">2&#8202;608</td><td class="n">2&#8202;488&nbsp;&middot;&nbsp;95%</td><td class="n">120</td><td class="n">0</td></tr>
+          <tr><td class="mono">emissions &middot; Value</td><td class="n">2&#8202;217</td><td class="n">1&#8202;799&nbsp;&middot;&nbsp;81%</td><td class="n">193</td><td class="n">167</td></tr>
+          <tr><td class="mono">mitigation &middot; Capacity</td><td class="n">1&#8202;687</td><td class="n">1&#8202;471&nbsp;&middot;&nbsp;87%</td><td class="n">108</td><td class="n">24</td></tr>
+          <tr><td class="mono">mitigation &middot; Amount</td><td class="n">3&#8202;817</td><td class="n">2&#8202;100&nbsp;&middot;&nbsp;55%</td><td class="n">1&#8202;245</td><td class="n">236</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="t-note" style="max-width:40rem">
+      Mitigation <code>Amount</code> is dominated by <code>%</code> values
+      (1&#8202;030 rows &mdash; renewable shares, reduction fractions) that have no
+      absolute target unit; these are the bulk of &ldquo;non-convertible&rdquo;.
+    </p>
+
+    <h3>Known limitations</h3>
+    <ul>
+      <li>Bare mass in a non-CO&#8322; mitigation row (<code>Mt</code>, <code>10^6&nbsp;t</code>) is left unparsed rather than guessed &mdash; it may be ammonia, hydrogen, or materials.</li>
+      <li>Other GHGs (<code>ktCH4</code>, <code>Mt&nbsp;NOx</code>, <code>Mt&nbsp;BC</code>, <code>Mt&nbsp;CO</code>) are excluded &mdash; the target is CO&#8322; mass only.</li>
+      <li><code>$</code> without a country marker is assumed USD; a handful of these may be AUD or CAD.</li>
+      <li>Value ranges (<code>300&ndash;400</code>) are read as their lower bound; the extraction prompt now emits lower / upper / midpoint as separate rows, so these are rare.</li>
+      <li>The euro-area aggregate deflator and rate are used for all <code>EUR</code> values regardless of the study&rsquo;s country.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  reproduce &nbsp;&rarr;&nbsp; <span class="mono">python3 stage3c-harmonize.py outputs/output-stage3c outputs/output-stage3c --refresh</span><br>
+  inputs: <span class="mono">merged-{mitigation,costs,emissions}.csv</span> &nbsp;&middot;&nbsp; outputs: <span class="mono">harmonized-{&hellip;}.csv</span><br>
+  reference data cached in <span class="mono">inputs/reference/</span>
+</footer>
