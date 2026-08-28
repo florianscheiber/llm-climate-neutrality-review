@@ -1,0 +1,465 @@
+<title>Stage-3 Pipeline</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Newsreader:ital@1&display=swap">
+
+<style>
+  :root {
+    --ground:        #f5f5f2;
+    --panel:         #efeeea;
+    --panel-line:    #dddcd4;
+    --ink:           #232427;
+    --ink-soft:      #4c4d4e;
+    --muted:         #7c7b73;
+    --accent:        #8f3a2e;
+    --accent-soft:   #b9503f;
+    --ok:            #3c6f4f;
+    --flag:          #9a6a1c;
+    --excl:          #85837a;
+    --rule:          #cfcec6;
+    --code-bg:       #ecebe5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #16171a;
+      --panel:       #1d1e21;
+      --panel-line:  #2c2d31;
+      --ink:         #e9e7e1;
+      --ink-soft:    #c3c1b9;
+      --muted:       #8f8e85;
+      --accent:      #d98b5f;
+      --accent-soft: #e6a986;
+      --ok:          #6fae86;
+      --flag:        #d0a558;
+      --excl:        #7f7e75;
+      --rule:        #2f3034;
+      --code-bg:     #232428;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:      #16171a;
+    --panel:       #1d1e21;
+    --panel-line:  #2c2d31;
+    --ink:         #e9e7e1;
+    --ink-soft:    #c3c1b9;
+    --muted:       #8f8e85;
+    --accent:      #d98b5f;
+    --accent-soft: #e6a986;
+    --ok:          #6fae86;
+    --flag:        #d0a558;
+    --excl:        #7f7e75;
+    --rule:        #2f3034;
+    --code-bg:     #232428;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Newsreader", Georgia, "Times New Roman", serif;
+    font-size: 18px;
+    line-height: 1.62;
+    font-variant-numeric: oldstyle-nums;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 1rem;
+    padding: .7rem clamp(1rem, 4vw, 2.5rem);
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .74rem; letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  .topbar b { color: var(--accent); font-weight: 600; }
+  .topbar span { color: var(--muted); }
+
+  main { max-width: 44rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2rem) 6rem; }
+  section { margin-top: 4.5rem; }
+
+  .hero { margin-top: 3.2rem; }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .76rem; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 1.1rem;
+  }
+  h1 {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-weight: 600;
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.08;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+  }
+  .lede {
+    font-size: 1.28rem; line-height: 1.5; color: var(--ink-soft);
+    max-width: 34rem; margin: 0 0 2.6rem;
+  }
+  .lede em { font-style: italic; color: var(--ink); }
+
+  h2 {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-weight: 600; font-size: 1.32rem; letter-spacing: -.005em;
+    margin: 0 0 1.1rem; padding-bottom: .5rem;
+    border-bottom: 1px solid var(--rule);
+    text-wrap: balance;
+  }
+  h2 .num { color: var(--accent); margin-right: .7rem; font-weight: 500; }
+  h3 {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-weight: 500; font-size: .95rem; letter-spacing: .02em;
+    text-transform: uppercase; color: var(--ink-soft);
+    margin: 2.2rem 0 .8rem;
+  }
+  p { margin: 0 0 1.05rem; max-width: 40rem; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  strong { font-weight: 600; }
+  ul { padding-left: 1.2rem; margin: 0 0 1.05rem; max-width: 40rem; }
+  li { margin: .3rem 0; }
+
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .86em;
+  }
+  p code, li code, td code {
+    background: var(--code-bg);
+    padding: .06em .38em;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .worked {
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-left: 3px solid var(--accent);
+    padding: 1.4rem 1.5rem;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .9rem; line-height: 1.8;
+    overflow-x: auto;
+  }
+  .worked .c { color: var(--muted); }
+  .worked .k { color: var(--accent); font-weight: 600; }
+
+  .scroll { overflow-x: auto; margin: 1.4rem 0 1.6rem; }
+  table {
+    width: 100%; border-collapse: collapse;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+  }
+  caption {
+    text-align: left; color: var(--muted); font-size: .8rem;
+    margin-bottom: .6rem; font-family: "IBM Plex Mono", monospace;
+  }
+  th {
+    text-align: left; font-weight: 600; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: .04em; font-size: .72rem;
+    padding: .5rem .8rem .5rem 0;
+    border-bottom: 2px solid var(--accent);
+    white-space: nowrap;
+  }
+  td {
+    padding: .5rem .8rem .5rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  .t-note { color: var(--muted); font-size: .78rem; white-space: normal; }
+
+  .flow {
+    display: flex; flex-wrap: wrap; gap: .5rem; align-items: stretch;
+    margin: 1.4rem 0 1.8rem;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: .78rem;
+  }
+  .flow .step {
+    flex: 1 1 7rem; background: var(--panel); border: 1px solid var(--panel-line);
+    padding: .7rem .8rem;
+  }
+  .flow .step b { color: var(--accent); display:block; font-weight:600; margin-bottom:.2rem; }
+  .flow .step span { color: var(--muted); }
+  .flow .arr { align-self: center; color: var(--muted); }
+
+  .pill {
+    display: inline-block; font-family: "IBM Plex Mono", monospace;
+    font-size: .72rem; padding: .1em .5em; border-radius: 2px;
+    border: 1px solid currentColor; white-space: nowrap;
+  }
+  .pill.key  { color: var(--accent); }
+  .pill.ok   { color: var(--ok); }
+  .pill.flag { color: var(--flag); }
+
+  .callout {
+    background: var(--panel); border: 1px solid var(--panel-line);
+    border-left: 3px solid var(--flag);
+    padding: 1rem 1.2rem; margin: 1.4rem 0;
+    font-size: .96rem;
+  }
+  .callout h3 { margin-top: 0; color: var(--flag); }
+
+  hr.soft { border: none; border-top: 1px solid var(--rule); margin: 2.4rem 0; }
+
+  footer {
+    max-width: 44rem; margin: 5rem auto 0; padding: 2rem clamp(1rem,4vw,2rem) 3rem;
+    border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", monospace; font-size: .76rem; color: var(--muted);
+  }
+
+  @media (max-width: 640px) {
+    body { font-size: 16.5px; }
+    .lede { font-size: 1.14rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="topbar">
+  <b>extraction&#8202;·&#8202;pipeline</b>
+  <span>run-stage3.py</span>
+</div>
+
+<main>
+  <div class="hero">
+    <p class="kicker">Data extraction pipeline &nbsp;/&nbsp; overview</p>
+    <h1>Stage-3 Extraction Pipeline</h1>
+    <p class="lede">
+      From <em>100 eligible PDFs</em> to a harmonized table of climate-neutrality
+      pathway datapoints &mdash; and a set of cross-study analysis figures.
+      Chained in order by <code>run-stage3.py</code>:
+      PDF&nbsp;&rarr;&nbsp;markdown, a first LLM extraction pass, a second pass
+      over the figures the first one could not read, a merge, unit
+      harmonization, then the 05&ndash;10 analyses.
+    </p>
+
+    <div class="worked" aria-label="One-liner">
+      <div><span class="c"># the whole pipeline, markdown &rarr; 09</span></div>
+      <div>export LLM_ROUTER_API_KEY=<span class="c">&lt;key&gt;</span></div>
+      <div>python3 <span class="k">run-stage3.py</span></div>
+    </div>
+  </div>
+
+  <section>
+    <h2><span class="num">&rsaquo;</span>The pipeline</h2>
+
+    <div class="flow">
+      <div class="step"><b>markdown</b><span>PDF &rarr; text + figure images</span></div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>extract</b><span>LLM pass 1</span></div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>candidates</b><span>LLM pass 2 (figures)</span></div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>merge</b><span>one table per category</span></div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>harmonize</b><span>units, currency, net-zero flag</span></div>
+      <div class="arr">&rarr;</div>
+      <div class="step"><b>05&ndash;10</b><span>cross-study analysis figures</span></div>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <caption>Each step is a standalone script &mdash; usage is documented at the top of its file</caption>
+        <thead>
+          <tr><th>Step</th><th>Script</th><th>In</th><th>Out</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">markdown</td>
+            <td class="mono">scripts/pdf-to-markdown-extraction.py</td>
+            <td class="t-note"><code>inputs/fulltext_pdf/&hellip;/*.pdf</code></td>
+            <td class="t-note"><code>intermediate/pdf-extraction/&lt;id&gt;/</code> &mdash; one Markdown file per PDF (text + reconstructed tables + captions) and the figure regions rasterised to PNG</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="mono">extract</td>
+            <td class="mono">scripts/01-stage3c-data-extraction.py</td>
+            <td class="t-note"><code>intermediate/pdf-extraction/</code></td>
+            <td class="t-note"><code>outputs/output-stage3c/&lt;id&gt;/</code> &mdash; <code>-mitigation</code> / <code>-costs</code> / <code>-emissions</code> CSV, plus <code>&lt;id&gt;-candidates.txt</code>: figures/tables it could not read but that still hold relevant quantities</td>
+            <td><span class="pill key">API key</span></td>
+          </tr>
+          <tr>
+            <td class="mono">candidates</td>
+            <td class="mono">scripts/02-stage3c-candidates-extraction.py</td>
+            <td class="t-note"><code>output-stage3c/&lt;id&gt;-candidates.txt</code> + the source PDFs</td>
+            <td class="t-note"><code>outputs/output-stage3c-candidates/&lt;id&gt;/</code> &mdash; same CSV format; the flagged figures re-read from full-page 300-DPI renders</td>
+            <td><span class="pill key">API key</span></td>
+          </tr>
+          <tr>
+            <td class="mono">merge</td>
+            <td class="mono">scripts/03-stage3c-merge-extractions.py</td>
+            <td class="t-note">per-paper CSVs from <strong>both</strong> passes + the full-text screening <code>.xlsx</code></td>
+            <td class="t-note"><code>outputs/output-stage3c/merged-{mitigation,costs,emissions}.csv</code> &mdash; concatenated, with <code>paper_id</code>, <code>Title</code>, <code>Year</code>, <code>DOI</code>, <code>extraction_pass</code> prepended</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="mono">harmonize</td>
+            <td class="mono">scripts/04-stage3c-harmonize.py</td>
+            <td class="t-note"><code>merged-*.csv</code></td>
+            <td class="t-note"><code>harmonized-*.csv</code> (units &rarr; MW / MWh / MtCO2 / km2 / real-2025 USD, provenance columns added) and <code>netzero-flags.csv</code>. World Bank FX + deflator fetched once, then cached in <code>inputs/reference/</code></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td class="mono">05&ndash;10<br>analyses</td>
+            <td class="mono">scripts/05-stage3c-sector-balance.py<br>
+              scripts/06-stage3c-carbon-price.py<br>
+              scripts/07-stage3c-mitigation-contribution.py<br>
+              scripts/08-stage3c-electricity-price.py<br>
+              scripts/09-stage3c-capex-by-technology.py<br>
+              scripts/10-stage3c-macro-economic-cost.py</td>
+            <td class="t-note"><code>harmonized-*.csv</code> + <code>netzero-flags.csv</code></td>
+            <td class="t-note">one <code>outputs/analysis/*.csv</code>, <code>figures/*.png</code> and <code>docs/*.html</code> each &mdash; exploratory cross-study figures (sector balance, carbon price, mitigation contribution, electricity price, CAPEX by technology, macro-economic cost)</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">&rsaquo;</span>Running it</h2>
+    <p>
+      <code>run-stage3.py</code> chains the steps and stops on the first
+      failure. By default it runs the <strong>whole pipeline</strong> &mdash;
+      <code>markdown&nbsp;&rarr;&nbsp;10</code>, including the 05&ndash;10
+      analysis figures.
+    </p>
+
+    <div class="worked">
+      <div><span class="c"># preview the commands, run nothing</span></div>
+      <div>python3 run-stage3.py --dry-run</div>
+      <div>&nbsp;</div>
+      <div><span class="c"># markdown + pass 1 already done, do the rest</span></div>
+      <div>python3 run-stage3.py --from candidates</div>
+      <div>&nbsp;</div>
+      <div><span class="c"># stop after the harmonized tables (skip 05-10)</span></div>
+      <div>python3 run-stage3.py --to harmonize</div>
+      <div>&nbsp;</div>
+      <div><span class="c"># re-run only the 05-10 analyses</span></div>
+      <div>python3 run-stage3.py --from sector-balance</div>
+      <div>&nbsp;</div>
+      <div><span class="c"># just re-merge and re-harmonize</span></div>
+      <div>python3 run-stage3.py --only merge,harmonize</div>
+      <div>&nbsp;</div>
+      <div><span class="c"># locate candidate figures without calling the model</span></div>
+      <div>python3 run-stage3.py --only candidates --candidates-dry-run</div>
+      <div>&nbsp;</div>
+      <div><span class="c"># smoke test on the first 3 papers</span></div>
+      <div>python3 run-stage3.py --limit 3</div>
+    </div>
+
+    <h3>Selection &amp; pass-through flags</h3>
+    <ul>
+      <li><code>--from</code> / <code>--to</code> / <code>--only</code> / <code>--skip</code> &mdash; choose which steps run (names: <code>markdown extract candidates merge harmonize sector-balance carbon-price mitigation-contribution electricity-price capex macro-economic-cost</code>)</li>
+      <li><code>--limit N</code> &rarr; <code>extract</code> &nbsp;&middot;&nbsp; <code>--model</code> &rarr; <code>extract</code> + <code>candidates</code></li>
+      <li><code>--candidates-dry-run</code>, <code>--candidates-all</code>, <code>--candidates-papers</code>, <code>--candidates-force</code> &rarr; <code>candidates</code></li>
+      <li><code>--netzero-fraction</code>, <code>--refresh</code> &rarr; <code>harmonize</code></li>
+      <li><code>--no-candidates-merge</code> &rarr; keep the second pass out of <code>merged-*.csv</code></li>
+    </ul>
+
+    <div class="callout">
+      <h3>Resumability</h3>
+      <p style="margin-bottom:0">
+        <code>extract</code> and <code>candidates</code> skip papers that are
+        already done, so a re-run is cheap and an interrupted run continues on
+        its own. If a step exits non-zero the pipeline stops and prints
+        <code>--from &lt;that step&gt;</code> to resume. The API-key steps are
+        checked up front &mdash; the run refuses to start if
+        <code>LLM_ROUTER_API_KEY</code> is unset and one of them is selected.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">&rsaquo;</span>The two-pass figure extraction</h2>
+    <p>
+      <code>scripts/pdf-to-markdown-extraction.py</code> crops each figure to its own
+      low-resolution PNG region. That is enough for the first pass to read many
+      charts, but stacked bars, multi-panel scenario grids and figures whose
+      axis or legend got sliced off by the crop often come back as
+      <strong>candidates</strong> rather than rows &mdash; roughly 200 flagged
+      figures/tables across ~60 papers.
+    </p>
+    <p>
+      The <code>candidates</code> step goes back to the source PDF, finds each
+      flagged figure by its caption (handling <code>S&hellip;</code> /
+      <code>A.&hellip;</code> / <code>B.&hellip;</code> / <code>SI</code> /
+      <code>Extended&nbsp;Data</code> labels, and excluding contents pages),
+      renders the <strong>whole page at 300&nbsp;DPI</strong>, and re-runs a
+      focused prompt (<code>prompts/stage3c_candidates_prompt.txt</code>) &mdash;
+      passing the rows the first pass already got for that figure so they are
+      not duplicated. Structurally un-digitisable items (spatial maps, Sankey
+      diagrams, violin plots) are skipped unless <code>--candidates-all</code>;
+      the model can also return <code>eligible:false</code> to decline a figure
+      it still cannot read.
+    </p>
+    <p class="t-note" style="max-width:40rem">
+      Preview first: <code>run-stage3.py --only candidates --candidates-dry-run</code>
+      writes <code>outputs/output-stage3c-candidates/&lt;id&gt;/&lt;id&gt;-plan.csv</code>
+      (which figure, which page, match quality) and
+      <code>run_log_dry.csv</code> &mdash; no API calls.
+    </p>
+  </section>
+
+  <section>
+    <h2><span class="num">&rsaquo;</span>Where things land</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Path</th><th>What</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">intermediate/pdf-extraction/</td><td class="t-note">per-paper Markdown + figure images (step 1)</td></tr>
+          <tr><td class="mono">outputs/output-stage3c/&lt;id&gt;/</td><td class="t-note">pass-1 per-paper CSVs, <code>candidates.txt</code>, <code>_raw_response.txt</code>, <code>run_log.csv</code></td></tr>
+          <tr><td class="mono">outputs/output-stage3c-candidates/&lt;id&gt;/</td><td class="t-note">pass-2 per-paper CSVs, <code>plan.csv</code>, rendered <code>pages/</code>, <code>run_log.csv</code></td></tr>
+          <tr><td class="mono">outputs/output-stage3c/merged-*.csv</td><td class="t-note">the combined extraction (step 4)</td></tr>
+          <tr><td class="mono">outputs/output-stage3c/harmonized-*.csv</td><td class="t-note">standardized units + provenance (step 5)</td></tr>
+          <tr><td class="mono">outputs/output-stage3c/netzero-flags.csv</td><td class="t-note">one row per (paper, scenario, area) with the net-zero test</td></tr>
+          <tr><td class="mono">inputs/reference/</td><td class="t-note">cached World Bank FX + GDP deflator series</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Method notes for the harmonize step:
+      <a href="unit-harmonization.html">unit-harmonization.html</a>.
+      Exploratory analyses over the harmonized tables (each script writes its
+      own page):
+      <a href="sector-balance-at-netzero.html">sector-balance-at-netzero.html</a>,
+      <a href="carbon-price-at-netzero.html">carbon-price-at-netzero.html</a>,
+      <a href="mitigation-contribution.html">mitigation-contribution.html</a>,
+      <a href="electricity-price-at-netzero.html">electricity-price-at-netzero.html</a>,
+      <a href="capex-by-technology.html">capex-by-technology.html</a>,
+      <a href="macro-economic-cost.html">macro-economic-cost.html</a>.
+    </p>
+    <p>
+      Earlier extraction attempts &mdash; <strong>3a</strong> (vision-only) and
+      <strong>3b</strong> (text + tables only) &mdash; are described in the
+      <a href="../README.md">README</a>; 3c supersedes both.
+    </p>
+  </section>
+
+  <section>
+    <h2><span class="num">&rsaquo;</span>Upstream</h2>
+    <p>
+      Stage 3 starts from the 100 PDFs that reviewers graded eligible after
+      full-text screening. Before that:
+    </p>
+    <ul>
+      <li><strong>stage 1</strong> &mdash; <code>scripts/stage1-abstract-screening.py</code>: LLM include/exclude on abstracts, compared against the CADIMA reference set.</li>
+      <li><strong>stage 2</strong> &mdash; <code>scripts/stage2-fulltext-screening.py</code>: LLM include/exclude on full texts.</li>
+    </ul>
+    <p class="t-note">
+      Inputs and outputs live on SharePoint
+      (<code>PRE-ReviewClimateNeutrality</code>); <code>inputs/</code> and
+      <code>outputs/</code> are git-ignored.
+    </p>
+  </section>
+</main>
+
+<footer>
+  run &nbsp;&rarr;&nbsp; <span class="mono">LLM_ROUTER_API_KEY=&lt;key&gt; python3 run-stage3.py</span><br>
+  preview &nbsp;&rarr;&nbsp; <span class="mono">python3 run-stage3.py --dry-run</span><br>
+  step scripts document their own usage at the top of each file
+</footer>

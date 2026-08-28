@@ -1,4 +1,6 @@
 pi==0.1.2
+matplotlib==3.11.1
 pillow==12.3.0
 pymupdf==1.28.2
+pymupdf4llm==1.28.2
 truststore==0.10.4
